@@ -47,3 +47,14 @@ def is_first_visit(request):
         referer = referer[8:]
 
     return not(referer.startswith(request.get_host()))
+
+
+def user_model():
+    # Safe User import for Django < 1.5
+    try:
+        from django.contrib.auth import get_user_model
+    except ImportError:
+        from django.contrib.auth.models import User
+        return User
+    else:
+        return get_user_model()

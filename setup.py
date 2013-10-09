@@ -16,7 +16,7 @@ setup(
     packages=find_packages(exclude=('tests', 'example')),
     package_data={'splango': ['templates/*.html', 'templates/*/*.html']},
     tests_require=[
-        'django>=1.3,<1.5',
+        'django>=1.4,<1.6',
     ],
     test_suite='runtests.runtests',
 )

@@ -1,10 +1,12 @@
 import logging
 import random
+
 import caching.base
-
 from django.db import models
-from django.contrib.auth.models import User
 
+from utils import user_model
+
+User = user_model()
 
 logger = logging.getLogger(__name__)
 

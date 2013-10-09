@@ -2,8 +2,11 @@
 import datetime
 from south.db import db
 from south.v2 import SchemaMigration
+from django.conf import settings
 from django.db import models
 
+
+user_model = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 class Migration(SchemaMigration):
 
@@ -120,8 +123,8 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
-        'auth.user': {
-            'Meta': {'object_name': 'User'},
+        user_model: {
+            'Meta': {'object_name': user_model.split('.')[1]},
             'date_joined': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'first_name': ('django.db.models.fields.CharField', [], {'max_length': '30', 'blank': 'True'}),
@@ -184,7 +187,7 @@ class Migration(SchemaMigration):
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'db_index': 'True', 'blank': 'True'}),
             'goals': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['splango.Goal']", 'through': "orm['splango.GoalRecord']", 'symmetrical': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'registered_as': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']", 'unique': 'True', 'null': 'True'})
+            'registered_as': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['%s']" % user_model, 'unique': 'True', 'null': 'True'})
         },
         'splango.variant': {
             'Meta': {'object_name': 'Variant'},
