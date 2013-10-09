@@ -26,7 +26,7 @@ class Migration(SchemaMigration):
         db.create_table('splango_subject', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, db_index=True, blank=True)),
-            ('registered_as', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'], unique=True, null=True)),
+            ('registered_as', self.gf('django.db.models.fields.related.ForeignKey')(to=orm[user_model], unique=True, null=True)),
         ))
         db.send_create_signal('splango', ['Subject'])
 
