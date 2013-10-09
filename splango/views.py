@@ -1,5 +1,6 @@
 # coding: utf-8
 from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Count
 from django.shortcuts import render_to_response, get_object_or_404
 from django.template import RequestContext
 
@@ -37,6 +38,7 @@ def experiment_detail(request, exp_name):
     """Show the experiment and its reports."""
     exp = get_object_or_404(Experiment, name=exp_name)
     reports = ExperimentReport.objects.filter(experiment=exp)
+    exp.enroll_counts_by_variant = exp.enrollment_set.all().values('variant__name').annotate(Count("id")).order_by()
 
     return render_to_response(
         "splango/experiment_detail.html",
