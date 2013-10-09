@@ -2,6 +2,7 @@ import logging
 import random
 
 import caching.base
+from django.conf import settings
 from django.db import models
 
 from utils import user_model
@@ -284,11 +285,22 @@ class Experiment(caching.base.CachingMixin, models.Model):
         """
         if variant is None:
             variant = self.get_random_variant()
-        enrollment, created = Enrollment.objects.get_or_create(
-            subject=subject,
-            experiment=self,
-            defaults={"variant": variant}
-        )
+
+        should_exclude_subject = False
+        if hasattr(settings, 'SPLANGO_EXCLUDE_USER_COMPARISON') and \
+           settings.SPLANGO_EXCLUDE_USER_COMPARISON:
+            comparison = settings.SPLANGO_EXCLUDE_USER_COMPARISON
+            should_exclude_subject = comparison(subject.registered_as)
+
+        if should_exclude_subject:
+            enrollment = None
+        else:
+            enrollment, created = Enrollment.objects.get_or_create(
+                subject=subject,
+                experiment=self,
+                defaults={"variant": variant}
+            )
+
         return enrollment
 
     @classmethod

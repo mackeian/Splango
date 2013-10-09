@@ -1,10 +1,12 @@
+from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
 from django.test import TransactionTestCase
+from django.test.utils import override_settings
 
-from splango.models import Experiment, Subject, GoalRecord
+from splango.models import Experiment, GoalRecord
 from splango.tests import (
     create_goal, create_goal_record, create_subject, create_enrollment,
-    create_experiment, create_experiment_report, create_variant)
+    create_experiment, create_variant)
 
 
 class GoalTest(TransactionTestCase):
@@ -169,8 +171,50 @@ class EnrollmentTest(TransactionTestCase):
 
 
 class ExperimentTest(TransactionTestCase):
+    def setUp(self):
+        self.variant = create_variant()
+        self.subject = create_subject()
+        self.experiment = self.variant.experiment
+        super(ExperimentTest, self).setUp()
 
-    pass
+    @override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=None)
+    def test_get_or_create_enrollment_not_excluding_by_default(self):
+        # Arrange
+
+        # Act
+        enrollment = self.experiment.get_or_create_enrollment(self.subject)
+
+        # Assert
+        self.assertEquals(self.variant, enrollment.variant)
+
+    def test_get_or_create_enrollment_excludes_admin_user(self):
+        # Arrange
+        user = get_user_model().objects.create(username='admin')
+        subject = create_subject()
+        subject.registered_as = user
+
+        def my_admin_excluding_comparison(user):
+            return True if user and user.username == 'admin' else False
+
+        # Act
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=my_admin_excluding_comparison):
+            enrollment = self.experiment.get_or_create_enrollment(subject)
+
+            # Assert
+            self.assertEquals(None, enrollment, 'Excluded user should not be enrolled')
+
+    def test_get_or_create_enrollment_excludes_anonymous_users(self):
+        # Arrange
+        def my_anonymous_excluding_comparison(auth_user):
+            should_exclude = True if auth_user is None else True
+            return should_exclude
+
+        # Act
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=my_anonymous_excluding_comparison):
+            enrollment = self.experiment.get_or_create_enrollment(self.subject)
+
+            # Assert
+            self.assertEquals(None, enrollment, 'Anonymous user should not be enrolled')
 
 
 class ExperimentReportTest(TransactionTestCase):

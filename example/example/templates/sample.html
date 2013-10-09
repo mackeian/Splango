@@ -101,6 +101,10 @@
         </div>
     {% endhyp %}
     <div class="separator"><p>x</p></div>
+    {% hyp "sample_experiment" "" %}
+        <h3>You are not enrolled in any experiments, default case here.</h3>
+    {% endhyp %}
+    <div class="separator"><p>x</p></div>
     <p>Cities: {{ cities|length }}</p>
     <a href="{% url 'myapp_goalie' %}">Track a goal!</a>
 

@@ -112,8 +112,12 @@ class RequestExperimentManager:
             selected_variant_obj, created = Variant.objects.get_or_create(
                     name=selected_variant,
                     experiment=exp)
-        subject_variant = exp.get_or_create_enrollment(subject, variant=selected_variant_obj)
-        variant = subject_variant.variant
+
+        enrollment = exp.get_or_create_enrollment(subject, variant=selected_variant_obj)
+        if enrollment:
+            variant = enrollment.variant
+        else:
+            variant = Variant()
         logger.info("got variant %s for subject %s" %
                     (str(variant), str(subject)))
 
