@@ -5,12 +5,19 @@ Based in :mod:`example.settings` of project "django-social-auth"
 
 """
 from os.path import abspath, dirname, basename, join
+import sys
 
 import django.conf.global_settings as DEFAULT_SETTINGS
 
-
 ROOT_PATH = abspath(dirname(__file__))
 PROJECT_NAME = basename(ROOT_PATH)
+
+# Ensure splango is in the python_path, not needed when installing with pip
+SPLANGO_PATH = dirname(dirname(ROOT_PATH))
+sys.path.append(SPLANGO_PATH)
+#SPLANGO_FORCE_VARIANT_USER_COMPARISON = 'example.example.foo_compare'
+
+
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -88,7 +95,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'splango',
-    'myapp',
+    'myapp'
 )
 
 LOGGING = {

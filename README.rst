@@ -131,7 +131,7 @@ Other features
     as being completed on the user's first request.
 
 * Excluding visitors (optional):
-  To exclude visitors you can defined a setting for your exclude comparison method, e.g.:
+  To exclude visitors you can defined a setting for your exclude comparison *function*, e.g.:
   settings.py
    SPLANGO_EXCLUDE_USER_COMPARISON='myapp.excludes.exclude_ab_user_comparison'
 
@@ -153,15 +153,18 @@ Other features
 
 * Force first variant on certain visitors (optional)
  In some cases you may want to expose the same variant to certain group of visitors,
-  e.g. all users from the same company should have the same variant (to avoid confusion)
+  e.g. all users from the same company should have the same variant (to avoid confusion).
+  You can define a setting tha refers to such *function*.
 
  settings.py:
-  SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON = 'myapp.comparison.first_variant_users'
+  SPLANGO_FORCE_VARIANT_USER_COMPARISON = 'myapp.comparison.first_variant_users'
 
  myapp.comparison.py
   def first_variant_users(authenticated_user=None):
     should_force_variant = False
+    variant_index = 0
     if authenticated_user and authenticated_user.belongs_to_company('IBM'):
         should_force_variant = True
-    return should_force_variant
+        variant_index = 1 # E.g. always force the second variant in all experiments
+    return should_force_variant, variant_index
 

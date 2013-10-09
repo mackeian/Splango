@@ -172,6 +172,7 @@ class EnrollmentTest(TransactionTestCase):
 
 class ExperimentTest(TransactionTestCase):
     def setUp(self):
+        self.module_name = __name__
         self.variant = create_variant()
         self.subject = create_subject()
         self.experiment = self.variant.experiment
@@ -193,11 +194,10 @@ class ExperimentTest(TransactionTestCase):
         subject = create_subject()
         subject.registered_as = user
 
-        def my_admin_excluding_comparison(user):
-            return True if user and user.username == 'admin' else False
+        function_path = self.module_name + '.my_admin_excluding_comparison'
 
         # Act
-        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=my_admin_excluding_comparison):
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=function_path):
             enrollment = self.experiment.get_or_create_enrollment(subject)
 
             # Assert
@@ -205,12 +205,10 @@ class ExperimentTest(TransactionTestCase):
 
     def test_get_or_create_enrollment_excludes_anonymous_users(self):
         # Arrange
-        def my_anonymous_excluding_comparison(auth_user):
-            should_exclude = True if auth_user is None else True
-            return should_exclude
+        function_path = self.module_name + '.my_anonymous_excluding_comparison'
 
         # Act
-        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=my_anonymous_excluding_comparison):
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=function_path):
             enrollment = self.experiment.get_or_create_enrollment(self.subject)
 
             # Assert
@@ -228,16 +226,29 @@ class ExperimentTest(TransactionTestCase):
         company_user.company = 'IBM'
         company_subject.registered_as = company_user
 
-        def force_variant_user_comparison(auth_user):
-            should_force_variant = True if auth_user and auth_user.company == 'IBM' else False
-            return should_force_variant
+        function_path = self.module_name + '.force_variant_user_comparison'
 
         # Act
-        with override_settings(SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON=force_variant_user_comparison):
+        with override_settings(SPLANGO_FORCE_VARIANT_USER_COMPARISON=function_path):
             enrollment_company = exp.get_or_create_enrollment(company_subject, variant_3)
 
             # Assert
-            self.assertEquals(variant_1, enrollment_company.variant, 'Company user should always get first variant')
+            self.assertEquals(variant_1, enrollment_company.variant, 'Company user should get first variant')
+
+
+def my_admin_excluding_comparison(user):
+    return True if user and user.username == 'admin' else False
+
+
+def my_anonymous_excluding_comparison(auth_user):
+    should_exclude = True if auth_user is None else True
+    return should_exclude
+
+
+def force_variant_user_comparison(auth_user):
+        variant_index = 0
+        should_force_variant = True if auth_user and auth_user.company == 'IBM' else False
+        return should_force_variant, variant_index
 
 
 class ExperimentReportTest(TransactionTestCase):
