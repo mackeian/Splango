@@ -1,5 +1,5 @@
 # coding: utf-8
-from unittest import TestCase
+from django.test import TransactionTestCase
 
 from mock import MagicMock
 
@@ -8,7 +8,7 @@ from splango.models import (Variant, Subject)
 from splango.tests import create_experiment, create_subject, create_variant
 
 
-class ExperimentManagerTest(TestCase):
+class ExperimentManagerTest(TransactionTestCase):
 
     fixtures = ['admin_user.json']
 
