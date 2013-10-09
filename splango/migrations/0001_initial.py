@@ -8,6 +8,10 @@ from django.db import models
 
 user_model = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
+# user_model fix from django-admin-tools:
+# https://bitbucket.org/izi/django-admin-tools/src/9f19ae9697e209a63e8a2f0974063679c5b291e5/admin_tools/ \
+# dashboard/migrations/0001_initial.py
+
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
