@@ -11,6 +11,21 @@
 
 
 {% block content %}
+
+<h2>Enrollments</h2>
+<table>
+    <tr>
+        {% for enroll_count in exp.enroll_counts_by_variant %}
+            <td>{{enroll_count.variant__name}}</td>
+        {% endfor %}
+    </tr>
+    <tr>
+        {% for enroll_count in exp.enroll_counts_by_variant %}
+            <td> {{enroll_count.id__count}}</td>
+        {% endfor %}
+    </tr>
+</table>
+
 <h2>Reports</h2>
 {% if reports %}
 <ul>
