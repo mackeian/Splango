@@ -1,4 +1,5 @@
-from django.shortcuts import render_to_response
+from django.core.urlresolvers import reverse
+from django.shortcuts import render_to_response, redirect
 from django.template import RequestContext
 
 
@@ -12,3 +13,9 @@ def sample(request):
     ]
 
     return render_to_response("sample.html", {"cities":cities}, RequestContext(request))
+
+
+def goalie(request):
+    exp = request.experiments_manager
+    exp.log_goal("features.goal")
+    return redirect(reverse('myapp_sample'))
