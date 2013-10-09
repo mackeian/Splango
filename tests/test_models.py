@@ -1,5 +1,5 @@
 from django.db.utils import IntegrityError
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from splango.models import Experiment, Subject, GoalRecord
 from splango.tests import (
@@ -7,7 +7,7 @@ from splango.tests import (
     create_experiment, create_experiment_report, create_variant)
 
 
-class GoalTest(TestCase):
+class GoalTest(TransactionTestCase):
 
     def setUp(self):
         self.subject1 = create_subject()
@@ -107,25 +107,21 @@ class GoalTest(TestCase):
         # variant4: 3 times, 37.5% of 8 enrollments
         # the expected result, the above given, is:
         # {1: (2, 25.0), 2: (2, 25.0), 3: (1, 12.5), 4: (3, 37.5)}
-        self.assertEqual(test_dict[1][0], 2)
-        self.assertEqual(test_dict[1][1], 25.0)
-
-        self.assertEqual(test_dict[2][0], 2)
-        self.assertEqual(test_dict[2][1], 25.0)
-
-        self.assertEqual(test_dict[3][0], 1)
-        self.assertEqual(test_dict[3][1], 12.5)
-
-        self.assertEqual(test_dict[4][0], 3)
-        self.assertEqual(test_dict[4][1], 37.5)
+        expected_dict = {
+            self.variant1.pk: (2, 25.0),
+            self.variant2.pk: (2, 25.0),
+            self.variant3.pk: (1, 12.5),
+            self.variant4.pk: (3, 37.5)
+        }
+        self.assertEquals(expected_dict, test_dict)
 
 
-class SubjectTest(TestCase):
+class SubjectTest(TransactionTestCase):
 
     pass
 
 
-class GoalRecordTest(TestCase):
+class GoalRecordTest(TransactionTestCase):
 
     def test_unique_together(self):
         goal = create_goal()
@@ -136,7 +132,7 @@ class GoalRecordTest(TestCase):
             IntegrityError, create_goal_record, goal=goal, subject=subject)
 
 
-class EnrollmentTest(TestCase):
+class EnrollmentTest(TransactionTestCase):
 
     def setUp(self):
         self.variant = create_variant()
@@ -172,16 +168,16 @@ class EnrollmentTest(TestCase):
         self.assertIsInstance(enrollment.experiment, Experiment)
 
 
-class ExperimentTest(TestCase):
+class ExperimentTest(TransactionTestCase):
 
     pass
 
 
-class ExperimentReportTest(TestCase):
+class ExperimentReportTest(TransactionTestCase):
 
     pass
 
 
-class VariantTest(TestCase):
+class VariantTest(TransactionTestCase):
 
     pass
