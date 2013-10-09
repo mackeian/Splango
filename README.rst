@@ -151,3 +151,17 @@ Other features
   if variant.name = "":
      # Handle excluded visitors here
 
+* Force first variant on certain visitors (optional)
+ In some cases you may want to expose the same variant to certain group of visitors,
+  e.g. all users from the same company should have the same variant (to avoid confusion)
+
+ settings.py:
+  SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON = 'myapp.comparison.first_variant_users'
+
+ myapp.comparison.py
+  def first_variant_users(authenticated_user=None):
+    should_force_variant = False
+    if authenticated_user and authenticated_user.belongs_to_company('IBM'):
+        should_force_variant = True
+    return should_force_variant
+

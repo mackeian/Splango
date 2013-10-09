@@ -216,6 +216,29 @@ class ExperimentTest(TransactionTestCase):
             # Assert
             self.assertEquals(None, enrollment, 'Anonymous user should not be enrolled')
 
+    def test_get_or_create_enrollment_force_variant(self):
+        # Arrange
+        exp = create_experiment(name='My Exp 1')
+        variant_1 = create_variant(name="v1", experiment=exp)
+        variant_2 = create_variant(name="v2", experiment=exp)
+        variant_3 = create_variant(name="v2", experiment=exp)
+
+        company_subject = create_subject()
+        company_user = get_user_model().objects.create(username='company_user1')
+        company_user.company = 'IBM'
+        company_subject.registered_as = company_user
+
+        def force_variant_user_comparison(auth_user):
+            should_force_variant = True if auth_user and auth_user.company == 'IBM' else False
+            return should_force_variant
+
+        # Act
+        with override_settings(SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON=force_variant_user_comparison):
+            enrollment_company = exp.get_or_create_enrollment(company_subject, variant_3)
+
+            # Assert
+            self.assertEquals(variant_1, enrollment_company.variant, 'Company user should always get first variant')
+
 
 class ExperimentReportTest(TransactionTestCase):
 

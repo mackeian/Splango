@@ -286,6 +286,13 @@ class Experiment(caching.base.CachingMixin, models.Model):
         if variant is None:
             variant = self.get_random_variant()
 
+        if hasattr(settings, 'SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON') and \
+           settings.SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON:
+            comparison = settings.SPLANGO_FORCE_FIRST_VARIANT_USER_COMPARISON
+            should_force_first_variant = comparison(subject.registered_as)
+            if should_force_first_variant:
+                variant = self.get_variants()[0]
+
         should_exclude_subject = False
         if hasattr(settings, 'SPLANGO_EXCLUDE_USER_COMPARISON') and \
            settings.SPLANGO_EXCLUDE_USER_COMPARISON:
