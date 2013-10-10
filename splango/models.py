@@ -239,7 +239,7 @@ class Experiment(caching.base.CachingMixin, models.Model):
     #     self.variants = "\n".join(variant_list)
 
     def get_variants(self):
-        return self.variants.all()
+        return self.variants.all().order_by('pk')
 
     def get_random_variant(self):
         """Return one of the object's variants chosen in a random way.
