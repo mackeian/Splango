@@ -7,7 +7,7 @@ from setuptools import setup, find_packages
 # ./manage.py test
 
 setup(
-    name='Splango',
+    name='django-splango',
     version='0.2',
     description='Split (A/B) testing library for Django',
     author='Shimon Rura',
@@ -15,8 +15,15 @@ setup(
     url='http://github.com/shimon/Splango',
     packages=find_packages(exclude=('tests', 'example')),
     package_data={'django-splango': ['templates/*.html', 'templates/*/*.html']},
+    install_requires=[
+        'django>=1.4,<1.6',
+        'django-cache-machine==0.8'
+    ],
     tests_require=[
         'django>=1.4,<1.6',
+        'django-cache-machine==0.8',
+        'mock==1.0.1',
+        'selenium==2.31.0'
     ],
-    test_suite='runtests.runtests',
+    test_suite='runtests.runtests'
 )
