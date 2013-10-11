@@ -8,13 +8,13 @@ from setuptools import setup, find_packages
 
 setup(
     name='Splango',
-    version='0.1',
+    version='0.2',
     description='Split (A/B) testing library for Django',
     author='Shimon Rura',
     author_email='shimon@rura.org',
     url='http://github.com/shimon/Splango',
     packages=find_packages(exclude=('tests', 'example')),
-    package_data={'splango': ['templates/*.html', 'templates/*/*.html']},
+    package_data={'django-splango': ['templates/*.html', 'templates/*/*.html']},
     tests_require=[
         'django>=1.4,<1.6',
     ],
