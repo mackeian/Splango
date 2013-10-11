@@ -53,3 +53,8 @@ auto-save-list
 tramp
 .\#*
 
+# Virtualenv
+env
+
+# Database
+
