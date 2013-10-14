@@ -48,22 +48,21 @@ class RequestExperimentManager:
 
         current_user = self.request.user
         current_subject = self.request.session.get(SPLANGO_SUBJECT)
-        logger.info('User at response finish: %s' % current_user)
-        logger.info('-> While user at init: %s' % self.user_at_init)
 
         user_changed = self.user_at_init != current_user
         assign_user_to_subject = current_subject and not current_subject.registered_as and current_user
+
         if user_changed or assign_user_to_subject:
             if user_changed:
                 logger.info("user status changed over request: %s --> %s"
                         % (str(self.user_at_init), str(current_user)))
-            if assign_user_to_subject:
-                logger.info("user is not mapped to current subject %s:%s" % (str(current_user), str(current_subject)))
-
             if not(current_user.is_authenticated()):
                 # User logged out. It's a new session, nothing special.
                 pass
             else:
+                if assign_user_to_subject:
+                    logger.info("user %s is not mapped to current subject %s, assigning" % (str(current_user), str(current_subject)))
+
                 # User has just logged in (or registered).
                 # We'll merge the session's current Subject with
                 # an existing Subject for this user, if exists,
