@@ -21,6 +21,10 @@ class Goal(models.Model):
     name = models.CharField(max_length=_NAME_LENGTH, primary_key=True)
     created = models.DateTimeField(auto_now_add=True)
 
+
+    class Meta:
+        ordering = ['name',]
+
     def __unicode__(self):
         return self.name
 
