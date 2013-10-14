@@ -1,10 +1,15 @@
 import logging
 import random
+
 import caching.base
-
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 
+from utils import user_model
+
+User = user_model()
+
+user_model_name = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +77,7 @@ class Subject(models.Model):
     or later on."""
 
     created = models.DateTimeField(auto_now_add=True, db_index=True)
-    registered_as = models.ForeignKey(User, null=True, editable=False,
+    registered_as = models.ForeignKey(user_model_name, null=True, editable=False,
                                       unique=True)
     goals = models.ManyToManyField(Goal, through='GoalRecord')
 
