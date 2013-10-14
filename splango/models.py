@@ -168,8 +168,6 @@ class GoalRecord(models.Model):
 
     @classmethod
     def record(cls, subject, goal_name, request_info, extra=None):
-        logger.warn("goal_record %r" %
-                    [subject, goal_name, request_info, extra])
         goal, created = Goal.objects.get_or_create(name=goal_name)
         goal_record, created = cls.objects.get_or_create(
             subject=subject, goal=goal, defaults=request_info)
