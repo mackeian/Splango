@@ -106,6 +106,7 @@
     {% endhyp %}
     <div class="separator"><p>x</p></div>
     <p>Cities: {{ cities|length }}</p>
-    <a href="{% url 'myapp_goalie' %}">Track a goal!</a>
+    <a href="{% url 'myapp_goalie' 1 %}">Track goal 1!</a>
+    <a href="{% url 'myapp_goalie' 2 %}">Track goal 2!</a>
 
 {% endblock %}
