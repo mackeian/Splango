@@ -93,7 +93,7 @@ class RequestExperimentManager:
 
         return response
 
-    def get_subject(self):
+    def get_or_create_subject(self):
         sezzion = self.request.session
         subject = sezzion.get(SPLANGO_SUBJECT)
         if not subject:  # TODO: shouldn't this be ``if subject is None``?
