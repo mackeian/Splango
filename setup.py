@@ -8,17 +8,17 @@ from setuptools import setup, find_packages
 # ./manage.py test
 
 # allow setup.py to be run from any path
-#os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
+os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-splango',
-    version='0.2',
+    version='0.21',
+    packages=find_packages(exclude=('tests', 'example')),
+    include_package_data=True,
     description='Split (A/B) testing library for Django',
+    url='http://github.com/shimon/Splango',
     author='Shimon Rura',
     author_email='shimon@rura.org',
-    url='http://github.com/shimon/Splango',
-    packages=find_packages(exclude=('tests', 'example')),
-    #package_data={'django-splango': ['templates/*.html', 'templates/*/*.html']},
     install_requires=[
         'django>=1.4,<1.6',
         'django-cache-machine==0.8'
