@@ -1,10 +1,13 @@
 import logging
 import random
+
 import caching.base
-
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
 
+from utils import user_model, get_function
+
+User = user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +20,10 @@ class Goal(models.Model):
 
     name = models.CharField(max_length=_NAME_LENGTH, primary_key=True)
     created = models.DateTimeField(auto_now_add=True)
+
+
+    class Meta:
+        ordering = ['name',]
 
     def __unicode__(self):
         return self.name
@@ -165,8 +172,6 @@ class GoalRecord(models.Model):
 
     @classmethod
     def record(cls, subject, goal_name, request_info, extra=None):
-        logger.warn("goal_record %r" %
-                    [subject, goal_name, request_info, extra])
         goal, created = Goal.objects.get_or_create(name=goal_name)
         goal_record, created = cls.objects.get_or_create(
             subject=subject, goal=goal, defaults=request_info)
@@ -236,7 +241,7 @@ class Experiment(caching.base.CachingMixin, models.Model):
     #     self.variants = "\n".join(variant_list)
 
     def get_variants(self):
-        return self.variants.all()
+        return self.variants.all().order_by('pk')
 
     def get_random_variant(self):
         """Return one of the object's variants chosen in a random way.
@@ -282,11 +287,33 @@ class Experiment(caching.base.CachingMixin, models.Model):
         """
         if variant is None:
             variant = self.get_random_variant()
-        enrollment, created = Enrollment.objects.get_or_create(
-            subject=subject,
-            experiment=self,
-            defaults={"variant": variant}
-        )
+
+        if hasattr(settings, 'SPLANGO_FORCE_VARIANT_USER_COMPARISON') and \
+           settings.SPLANGO_FORCE_VARIANT_USER_COMPARISON:
+            comparison = get_function(settings.SPLANGO_FORCE_VARIANT_USER_COMPARISON)
+            should_force_variant, variant_index = comparison(subject.registered_as)
+            if should_force_variant:
+                variants = self.get_variants()
+                if 0 <= variant_index < len(variants):
+                    variant = variants[variant_index]
+                else:
+                    variant = variants[0]
+
+        should_exclude_subject = False
+        if hasattr(settings, 'SPLANGO_EXCLUDE_USER_COMPARISON') and \
+           settings.SPLANGO_EXCLUDE_USER_COMPARISON:
+            comparison = get_function(settings.SPLANGO_EXCLUDE_USER_COMPARISON)
+            should_exclude_subject = comparison(subject.registered_as)
+
+        if should_exclude_subject:
+            enrollment = None
+        else:
+            enrollment, created = Enrollment.objects.get_or_create(
+                subject=subject,
+                experiment=self,
+                defaults={"variant": variant}
+            )
+
         return enrollment
 
     @classmethod

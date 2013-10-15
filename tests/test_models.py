@@ -1,13 +1,15 @@
+from django.contrib.auth import get_user_model
 from django.db.utils import IntegrityError
-from django.test import TestCase
+from django.test import TransactionTestCase
+from django.test.utils import override_settings
 
-from splango.models import Experiment, Subject, GoalRecord
+from splango.models import Experiment, GoalRecord
 from splango.tests import (
     create_goal, create_goal_record, create_subject, create_enrollment,
-    create_experiment, create_experiment_report, create_variant)
+    create_experiment, create_variant)
 
 
-class GoalTest(TestCase):
+class GoalTest(TransactionTestCase):
 
     def setUp(self):
         self.subject1 = create_subject()
@@ -107,25 +109,21 @@ class GoalTest(TestCase):
         # variant4: 3 times, 37.5% of 8 enrollments
         # the expected result, the above given, is:
         # {1: (2, 25.0), 2: (2, 25.0), 3: (1, 12.5), 4: (3, 37.5)}
-        self.assertEqual(test_dict[1][0], 2)
-        self.assertEqual(test_dict[1][1], 25.0)
-
-        self.assertEqual(test_dict[2][0], 2)
-        self.assertEqual(test_dict[2][1], 25.0)
-
-        self.assertEqual(test_dict[3][0], 1)
-        self.assertEqual(test_dict[3][1], 12.5)
-
-        self.assertEqual(test_dict[4][0], 3)
-        self.assertEqual(test_dict[4][1], 37.5)
+        expected_dict = {
+            self.variant1.pk: (2, 25.0),
+            self.variant2.pk: (2, 25.0),
+            self.variant3.pk: (1, 12.5),
+            self.variant4.pk: (3, 37.5)
+        }
+        self.assertEquals(expected_dict, test_dict)
 
 
-class SubjectTest(TestCase):
+class SubjectTest(TransactionTestCase):
 
     pass
 
 
-class GoalRecordTest(TestCase):
+class GoalRecordTest(TransactionTestCase):
 
     def test_unique_together(self):
         goal = create_goal()
@@ -136,7 +134,7 @@ class GoalRecordTest(TestCase):
             IntegrityError, create_goal_record, goal=goal, subject=subject)
 
 
-class EnrollmentTest(TestCase):
+class EnrollmentTest(TransactionTestCase):
 
     def setUp(self):
         self.variant = create_variant()
@@ -172,16 +170,92 @@ class EnrollmentTest(TestCase):
         self.assertIsInstance(enrollment.experiment, Experiment)
 
 
-class ExperimentTest(TestCase):
+class ExperimentTest(TransactionTestCase):
+    def setUp(self):
+        self.module_name = __name__
+        self.variant = create_variant()
+        self.subject = create_subject()
+        self.experiment = self.variant.experiment
+        super(ExperimentTest, self).setUp()
+
+    @override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=None)
+    def test_get_or_create_enrollment_not_excluding_by_default(self):
+        # Arrange
+
+        # Act
+        enrollment = self.experiment.get_or_create_enrollment(self.subject)
+
+        # Assert
+        self.assertEquals(self.variant, enrollment.variant)
+
+    def test_get_or_create_enrollment_excludes_admin_user(self):
+        # Arrange
+        user = get_user_model().objects.create(username='admin')
+        subject = create_subject()
+        subject.registered_as = user
+
+        function_path = self.module_name + '.my_admin_excluding_comparison'
+
+        # Act
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=function_path):
+            enrollment = self.experiment.get_or_create_enrollment(subject)
+
+            # Assert
+            self.assertEquals(None, enrollment, 'Excluded user should not be enrolled')
+
+    def test_get_or_create_enrollment_excludes_anonymous_users(self):
+        # Arrange
+        function_path = self.module_name + '.my_anonymous_excluding_comparison'
+
+        # Act
+        with override_settings(SPLANGO_EXCLUDE_USER_COMPARISON=function_path):
+            enrollment = self.experiment.get_or_create_enrollment(self.subject)
+
+            # Assert
+            self.assertEquals(None, enrollment, 'Anonymous user should not be enrolled')
+
+    def test_get_or_create_enrollment_force_variant(self):
+        # Arrange
+        exp = create_experiment(name='My Exp 1')
+        variant_1 = create_variant(name="v1", experiment=exp)
+        variant_2 = create_variant(name="v2", experiment=exp)
+        variant_3 = create_variant(name="v2", experiment=exp)
+
+        company_subject = create_subject()
+        company_user = get_user_model().objects.create(username='company_user1')
+        company_user.company = 'IBM'
+        company_subject.registered_as = company_user
+
+        function_path = self.module_name + '.force_variant_user_comparison'
+
+        # Act
+        with override_settings(SPLANGO_FORCE_VARIANT_USER_COMPARISON=function_path):
+            enrollment_company = exp.get_or_create_enrollment(company_subject, variant_3)
+
+            # Assert
+            self.assertEquals(variant_1, enrollment_company.variant, 'Company user should get first variant')
+
+
+def my_admin_excluding_comparison(user):
+    return True if user and user.username == 'admin' else False
+
+
+def my_anonymous_excluding_comparison(auth_user):
+    should_exclude = True if auth_user is None else True
+    return should_exclude
+
+
+def force_variant_user_comparison(auth_user):
+        variant_index = 0
+        should_force_variant = True if auth_user and auth_user.company == 'IBM' else False
+        return should_force_variant, variant_index
+
+
+class ExperimentReportTest(TransactionTestCase):
 
     pass
 
 
-class ExperimentReportTest(TestCase):
-
-    pass
-
-
-class VariantTest(TestCase):
+class VariantTest(TransactionTestCase):
 
     pass

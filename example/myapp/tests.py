@@ -42,15 +42,15 @@ class InitTest(TestCase):
         exp_man = RequestExperimentManager(request)
 
         # It is needed a subject, because ``exp_man`` will call
-        # :func:``splango.RequestExperimentManager.get_subject`` method. So,
+        # :func:``splango.RequestExperimentManager.get_or_create_subject`` method. So,
         # we mock that method in order to have the right returned value.
         subject_ = create_subject()
-        exp_man.get_subject = MagicMock(name="Subject")
-        exp_man.get_subject.return_value = subject_
+        exp_man.get_or_create_subject = MagicMock(name="Subject")
+        exp_man.get_or_create_subject.return_value = subject_
 
-        # Verify that :func:``splango.RequestExperimentManager.get_subject``
+        # Verify that :func:``splango.RequestExperimentManager.get_or_create_subject``
         # actually gets a :class:`Subject` instance.
-        mocked_subject = exp_man.get_subject()
+        mocked_subject = exp_man.get_or_create_subject()
         self.assertIsInstance(mocked_subject, Subject)
 
         # Now, call

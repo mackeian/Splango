@@ -96,14 +96,6 @@ Installation
 
         'splango.middleware.ExperimentsMiddleware'
 
-  * optionally, define a goal to be logged when the first visit to your site
-    is made:
-
-        SPLANGO_FIRST_VISIT_GOAL = "firstvisit"
-
-    If this is defined, splango will automatically log the goal "firstvisit"
-    as being completed on the user's first request.
-
 * In your urls.py, include the splango urls and admin_urls modules:
 
         (r'^splango/', include('splango.urls')),
@@ -123,3 +115,56 @@ Usage Notes
 
 * Hypotheses within an experiment must have unique names, but you can reuse
   a hypothesis name (e.g. "control") in multiple experiments if you wish.
+
+
+
+Other features
+====================
+
+* First visit goal (optional)
+  Optionally, define a goal to be logged when the first visit to your site
+    is made:
+
+        SPLANGO_FIRST_VISIT_GOAL = "firstvisit"
+
+    If this is defined, splango will automatically log the goal "firstvisit"
+    as being completed on the user's first request.
+
+* Excluding visitors (optional):
+  To exclude visitors you can defined a setting for your exclude comparison *function*, e.g.:
+  settings.py
+   SPLANGO_EXCLUDE_USER_COMPARISON='myapp.excludes.exclude_ab_user_comparison'
+
+  myapp.excludes.py:
+   def exclude_ab_user_comparison(authenticated_user=None):
+    should_exclude = False
+    if authenticated_user and authenticated_user.is_admin():
+        should_exclude = True
+        # Exclude all admin users
+        return True
+    return should_exclude
+
+  To catch visitors that are excluded (and not enrolled in the experiment) in templates, use:
+  {% hyp "sample_experiment" "" %}
+
+  Or in views with:
+  if variant.name = "":
+     # Handle excluded visitors here
+
+* Force first variant on certain visitors (optional)
+ In some cases you may want to expose the same variant to certain group of visitors,
+  e.g. all users from the same company should have the same variant (to avoid confusion).
+  You can define a setting tha refers to such *function*.
+
+ settings.py:
+  SPLANGO_FORCE_VARIANT_USER_COMPARISON = 'myapp.comparison.first_variant_users'
+
+ myapp.comparison.py
+  def first_variant_users(authenticated_user=None):
+    should_force_variant = False
+    variant_index = 0
+    if authenticated_user and authenticated_user.belongs_to_company('IBM'):
+        should_force_variant = True
+        variant_index = 1 # E.g. always force the second variant in all experiments
+    return should_force_variant, variant_index
+

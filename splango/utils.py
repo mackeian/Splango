@@ -1,6 +1,9 @@
 """Utilities for project Splango.
 
 """
+from importlib import import_module
+
+from django.core.exceptions import ImproperlyConfigured
 
 
 def replace_insensitive(string, target, replacement):
@@ -47,3 +50,29 @@ def is_first_visit(request):
         referer = referer[8:]
 
     return not(referer.startswith(request.get_host()))
+
+
+def user_model():
+    # Safe User import for Django < 1.5
+    try:
+        from django.contrib.auth import get_user_model
+    except ImportError:
+        from django.contrib.auth.models import User
+        return User
+    else:
+        return get_user_model()
+
+
+def get_function(path):
+    if not path:
+        raise AttributeError('Empty path for function.')
+    try:
+        module_name, function_name = path.rsplit('.', 1)
+        mod = import_module(module_name)
+        fnc = getattr(mod, function_name)
+        return fnc
+    except ImportError as e:
+        raise ImproperlyConfigured('Error importing function %s: "%s"' % (path, e))
+    except AttributeError:
+        raise ImproperlyConfigured('Module "%s" does not define a method "%s"' % (module_name, function_name))
+

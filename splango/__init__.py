@@ -20,6 +20,7 @@ class RequestExperimentManager:
         self.request = request
         self.user_at_init = request.user
         self.queued_actions = []
+        logger.info('User at request init: %s' % request.user)
 
     def enqueue(self, action, params):
         self.queued_actions.append((action, params))
@@ -30,10 +31,10 @@ class RequestExperimentManager:
         if action == "enroll":
             exp = Experiment.objects.get(name=params["exp_name"])
             variant = params["variant"]
-            exp.get_or_create_enrollment(self.get_subject(), variant)
+            exp.get_or_create_enrollment(self.get_or_create_subject(), variant)
 
         elif action == "log_goal":
-            goal_record = GoalRecord.record(self.get_subject(),
+            goal_record = GoalRecord.record(self.get_or_create_subject(),
                                             params["goal_name"],
                                             params["request_info"],
                                             extra=params.get("extra"))
@@ -46,37 +47,42 @@ class RequestExperimentManager:
         """Decide what to do if subject is human or not."""
 
         current_user = self.request.user
+        current_subject = self.request.session.get(SPLANGO_SUBJECT)
 
-        if self.user_at_init != current_user:
-            logger.info("user status changed over request: %s --> %s"
+        user_changed = self.user_at_init != current_user
+        assign_user_to_subject = current_subject and not current_subject.registered_as and current_user
+
+        if user_changed or assign_user_to_subject:
+            if user_changed:
+                logger.info("user status changed over request: %s --> %s"
                         % (str(self.user_at_init), str(current_user)))
-
             if not(current_user.is_authenticated()):
                 # User logged out. It's a new session, nothing special.
                 pass
             else:
+                if assign_user_to_subject:
+                    logger.info("user %s is not mapped to current subject %s, assigning" % (str(current_user), str(current_subject)))
+
                 # User has just logged in (or registered).
                 # We'll merge the session's current Subject with
                 # an existing Subject for this user, if exists,
                 # or simply set the subject.registered_as field.
 
-                old_subject = self.request.session.get(SPLANGO_SUBJECT)
-
                 try:
                     existing_subject = Subject.objects.get(
                         registered_as=current_user)
                     # there is an existing registered subject!
-                    if old_subject and old_subject.id != existing_subject.id:
+                    if current_subject and current_subject.id != existing_subject.id:
                         # merge old subject's activity into new
-                        old_subject.merge_into(existing_subject)
+                        current_subject.merge_into(existing_subject)
 
-                    # whether we had an old_subject or not, we must
+                    # whether we had an current_subject or not, we must
                     # set session to use our existing_subject
                     self.request.session[SPLANGO_SUBJECT] = existing_subject
 
                 except Subject.DoesNotExist:
                     # promote current subject to registered!
-                    subject = self.get_subject()
+                    subject = self.get_or_create_subject()
                     subject.registered_as = current_user
                     subject.save()
 
@@ -86,7 +92,7 @@ class RequestExperimentManager:
 
         return response
 
-    def get_subject(self):
+    def get_or_create_subject(self):
         sezzion = self.request.session
         subject = sezzion.get(SPLANGO_SUBJECT)
         if not subject:  # TODO: shouldn't this be ``if subject is None``?
@@ -94,8 +100,7 @@ class RequestExperimentManager:
             self.request.session[SPLANGO_SUBJECT] = subject
             subject.save()
             logger.info("created subject: %s" % str(subject))
-        sub = subject
-        return sub
+        return subject
 
     def declare_and_enroll(self, exp_name, variants, selected_variant=None):
         '''
@@ -106,14 +111,18 @@ class RequestExperimentManager:
         '''
         exp = Experiment.declare(exp_name, variants)
 
-        subject = self.get_subject()
+        subject = self.get_or_create_subject()
         selected_variant_obj = None
         if selected_variant:
             selected_variant_obj, created = Variant.objects.get_or_create(
                     name=selected_variant,
                     experiment=exp)
-        subject_variant = exp.get_or_create_enrollment(subject, variant=selected_variant_obj)
-        variant = subject_variant.variant
+
+        enrollment = exp.get_or_create_enrollment(subject, variant=selected_variant_obj)
+        if enrollment:
+            variant = enrollment.variant
+        else:
+            variant = Variant()
         logger.info("got variant %s for subject %s" %
                     (str(variant), str(subject)))
 
