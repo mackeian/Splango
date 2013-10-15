@@ -20,7 +20,6 @@ class RequestExperimentManager:
         self.request = request
         self.user_at_init = request.user
         self.queued_actions = []
-        logger.info('User at request init: %s' % request.user)
 
     def enqueue(self, action, params):
         self.queued_actions.append((action, params))
