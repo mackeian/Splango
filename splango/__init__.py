@@ -49,7 +49,7 @@ class RequestExperimentManager:
         current_subject = self.request.session.get(SPLANGO_SUBJECT)
 
         user_changed = self.user_at_init != current_user
-        assign_user_to_subject = current_subject and not current_subject.registered_as and current_user
+        assign_user_to_subject = current_subject and not current_subject.registered_as
 
         if user_changed or assign_user_to_subject:
             if user_changed:
@@ -61,29 +61,31 @@ class RequestExperimentManager:
             else:
                 if assign_user_to_subject:
                     logger.info("user %s is not mapped to current subject %s, assigning" % (str(current_user), str(current_subject)))
-
-                # User has just logged in (or registered).
-                # We'll merge the session's current Subject with
-                # an existing Subject for this user, if exists,
-                # or simply set the subject.registered_as field.
-
                 try:
-                    existing_subject = Subject.objects.get(
-                        registered_as=current_user)
-                    # there is an existing registered subject!
-                    if current_subject and current_subject.id != existing_subject.id:
-                        # merge old subject's activity into new
-                        current_subject.merge_into(existing_subject)
+                    # User has just logged in (or registered).
+                    # We'll merge the session's current Subject with
+                    # an existing Subject for this user, if exists,
+                    # or simply set the subject.registered_as field.
 
-                    # whether we had an current_subject or not, we must
-                    # set session to use our existing_subject
-                    self.request.session[SPLANGO_SUBJECT] = existing_subject
+                    try:
+                        existing_subject = Subject.objects.get(
+                            registered_as=current_user)
+                        # there is an existing registered subject!
+                        if current_subject and current_subject.id != existing_subject.id:
+                            # merge old subject's activity into new
+                            current_subject.merge_into(existing_subject)
 
-                except Subject.DoesNotExist:
-                    # promote current subject to registered!
-                    subject = self.get_or_create_subject()
-                    subject.registered_as = current_user
-                    subject.save()
+                        # whether we had an current_subject or not, we must
+                        # set session to use our existing_subject
+                        self.request.session[SPLANGO_SUBJECT] = existing_subject
+
+                    except Subject.DoesNotExist:
+                        # promote current subject to registered!
+                        subject = self.get_or_create_subject()
+                        subject.registered_as = current_user
+                        subject.save()
+                except Exception as e:
+                    logger.error('Unable to save or merge subject in finish_request: "%s"', e)
 
         for (action, params) in self.queued_actions:
             self.process_from_queue(action, params)
